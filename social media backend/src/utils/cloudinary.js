@@ -21,7 +21,7 @@ const uploadOnCloudinary = async (localFilePath) => {
         return response;
     }
     catch (error) {
-        fs.unlinkSync(localFilePath) // rmeoving the media from the local server once it is failed to upload 
+        fs.unlinkSync(localFilePath) // removing the media from the local server once it is failed to upload 
         return null;
     }
 }
