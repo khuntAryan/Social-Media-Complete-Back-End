@@ -57,37 +57,53 @@ userSchema.pre("save", async function (next) {
 
 
 //checking password entered by user for logging in
-userSchema.methods.isPasswordCorrect = function (password) { 
-    return bcrypt.compare(password , this.password);
- };
+userSchema.methods.isPasswordCorrect = function (password) {
+    return bcrypt.compare(password, this.password);
+};
+// here PASSWORD is given by the user 
+// THIS.PASSWORD is check from the DB 
 
 
 
 
 
- //generating access token and refresh token using methods itself
- userSchema.methods.generateAccessToken = async function (){
+//generating access token and refresh token using methods itself
+userSchema.methods.generateAccessToken = async function () {
     jwt.sign({
         _id: this._id,
     },
-    process.env.ACCESS_TOKEN_SECRET,
-    {
-        expiresIn: process.env.ACCESS_TOKEN_EXPIRY
-    }
+        process.env.ACCESS_TOKEN_SECRET,
+        {
+            expiresIn: process.env.ACCESS_TOKEN_EXPIRY
+        }
     );
- };
+};
 
- userSchema.methods.generateRefreshToken = async function (){
+userSchema.methods.generateRefreshToken = async function () {
     jwt.sign({
         _id: this._id,
     },
-    process.env.REFRESH_TOKEN_SECRET,
-    {
-        expiresIn: process.env.REFRESH_TOKEN_EXPIRY
-    }
+        process.env.REFRESH_TOKEN_SECRET,
+        {
+            expiresIn: process.env.REFRESH_TOKEN_EXPIRY
+        }
     );
- };
+};
 
+
+// Access token and Refresh token
+// access token are the short lived 
+// it gives access to user where the authentication is required before going any task
+// i.e-> changing passowrd , editing profile etc
+// to do so first user have to verify himself so to make user login again and again 
+// ACCESS TOKEN comes into play , it gives access to user to directly aceess the feature
+
+
+// Refresh token comes into play when Access token get expire 
+// if user want to make any change but aceess token is expired 
+// now the reftresh token comes where it is avaiable to both Db and the user 
+// so in this case user is supposed to hit an end point where the refresh token from the user will be checked with the DB
+// if it is correct imidiately new Aceess token will be generated and user will access the feature
 
 
 
