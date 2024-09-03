@@ -170,11 +170,43 @@ const loginUser = asyncHandler(async (req, res) => {
     }
 
     return res.status(200)
-    .cookie("access token",accessToken)
-    .cookie("refresh token",refreshToken)
-    .json(
-        new ApiResponse(200,{user: loggedInUser , accessToken , refreshToken } , "user logged in successfully")
-    )
+        .cookie("accessToken", accessToken)
+        .cookie("refreshToken", refreshToken)
+        .json(
+            new ApiResponse(200, { user: loggedInUser, accessToken, refreshToken }, "user logged in successfully")
+        )
 })
 
-export { registerUser }
+const logoutUser = asyncHandler(async (req, res, next) => {
+
+    await User.findByIdAndUpdate(
+        req.user._id  // providing the user // here we are direting the path not the user directly
+        ,
+        {
+            $set: { refeshToken: undefined }  // $set is an operator
+        },
+        {
+            new: true
+        }
+    )
+
+    const options = {
+        httpOnly: true,
+        secure: true
+    }
+
+    return res
+        .status(200)
+        .clearCookie("accessToken", options)
+        .clearCookie("refreshToken", options)
+        .json(
+            new ApiResponse(200, {}, "user logged out successFully!!")
+        )
+
+})
+
+export {
+    registerUser,
+    loginUser,
+    logoutUser
+}
