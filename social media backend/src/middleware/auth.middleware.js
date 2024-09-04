@@ -12,7 +12,7 @@ try {
         //add to req.user
     
         // accessing token from the website or the app(custom)
-        const token = req.cookie?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
+        const token = req.cookies?.accessToken || req.header("Authorization")?.replace("Bearer ", "")
     
         if (!token) {
             throw new ApiError(400, "unauthorized request!!")
