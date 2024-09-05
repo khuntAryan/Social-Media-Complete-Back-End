@@ -4,6 +4,7 @@ import { User } from "../models/user.modles.js";
 import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
+import { application } from "express";
 
 const generateAccessAndRefreshToken = async((userId) => {
     try {
@@ -245,9 +246,73 @@ const refreshAccessToken = asyncHandler(async (req, res) => {
         throw new ApiError(400, error?.message || "invalid refresh token!!")
     }
 })
+
+const changeCurrentPassword = asyncHandler(async (req, res) => {
+    //get the user
+    //access the password
+    //remove the password(replace)
+
+    const { newPassword } = req.body
+    const user = await User.findById(req.user?._id)
+    if (!user) {
+        throw new ApiError(400, "invalid user!!")
+    }
+    user.password = newPassword
+    await user.save({ validateBeforeSave: false })
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, {}, "password changed Successfully!!")
+        )
+})
+
+const currentUser = asyncHandler(async (req, res) => {
+    const user = await User.findById(req.user?._id)
+    return user
+    /* 
+    return res
+    .status(200)
+    .json(
+        new apiResponse(200,{req.user},"current user fetched successfully!!")
+    )
+    */
+})
+
+const updateAccountDetails = asyncHandler(async (req, res) => {
+    //get the data we want to update
+    //find the user
+    //access old data
+    //replace the data with new one
+    //save the data
+    //return res
+
+    const { fullname, email, newFullName, newEmail } = req.body
+    if (!fullname || !email) {
+        throw new ApiError(400, "fields cannot be empty!!")
+    }
+
+    const user = await User.findOne(
+        { $or: [{ fullname }, { email }] }
+    ).select("-password")
+
+    user.fullname = newFullName
+    user.email = newEmail
+
+    user.save({ validateBeforeSave: false })
+
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, user, "details changed successfully!!")
+        )
+})
 export {
     registerUser,
     loginUser,
     logoutUser,
-    refreshAccessToken
+    refreshAccessToken,
+    changeCurrentPassword,
+    currentUser,
+    updateAccountDetails
 }
