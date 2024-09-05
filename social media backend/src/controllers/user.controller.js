@@ -74,7 +74,13 @@ const registerUser = asyncHandler(async (req, res) => {
     // now we want path of the avatar so that we can upload it in cloudinary
     // we can do that using req.files a new extension provided by multer
     // it allow access to files uploaded
-    const avatarLocalPath = req.files?.avatar[0]?.path;
+    const avatarLocalPath = req.file?.avatar[0]?.path;
+
+    //here files means we are taking multiple media from the user
+    //e.g-> avatar , cover image etc...
+    //when we want single media we use file 
+    //in our case we only want one media or image 
+    //therefore we we will use req.file
 
     if (!avatarLocalPath) {
         throw new ApiError(400, "avatar is required!!")
@@ -307,6 +313,34 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
             new ApiResponse(200, user, "details changed successfully!!")
         )
 })
+
+const updateUserAvatar = asyncHandler(async (req, res) => {
+    //this line of code give us the file path already uploaded by the user
+    const avatarLocalPath = req.file?.path;
+    //multer take the file from the user and we access the path here 
+    if(!avatarLocalPath){
+        throw new ApiError(400,"file path missing!!")
+    }
+    //here we are uploading the image to the cloudinary
+    const avatar = await uploadOnCloudinary(avatarLocalPath)
+    if(!avatar.url){
+        throw new ApiError(400,"file path not found!!")
+    }
+    //here we are updating the url in the DB
+    const user = await User.findByIdAndUpdate(
+        req.user?._id,
+        {$set: {
+            avatar: avatar.url
+        }},
+        {new: true}
+    )
+
+    return res
+    .status(200)
+    .json(
+        new ApiResponse(200,user,"avatar updated successFully!!")
+    )
+})
 export {
     registerUser,
     loginUser,
@@ -314,5 +348,6 @@ export {
     refreshAccessToken,
     changeCurrentPassword,
     currentUser,
-    updateAccountDetails
+    updateAccountDetails,
+    updateUserAvatar
 }
