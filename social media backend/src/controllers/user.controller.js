@@ -5,6 +5,7 @@ import { uploadOnCloudinary } from "../utils/cloudinary.js"
 import { ApiResponse } from "../utils/ApiResponse.js"
 import jwt from "jsonwebtoken"
 import { application } from "express";
+import { v2 as cloudinary } from "cloudinary"
 
 const generateAccessAndRefreshToken = async((userId) => {
     try {
@@ -315,31 +316,46 @@ const updateAccountDetails = asyncHandler(async (req, res) => {
 })
 
 const updateUserAvatar = asyncHandler(async (req, res) => {
+    //deleting the pre existing image before updating it
+
+    const currentUser = await User.findById(req.user?._id)
+    const oldImageUrl = currentUser.avatar
+    //here we have access to old image 
+
     //this line of code give us the file path already uploaded by the user
     const avatarLocalPath = req.file?.path;
     //multer take the file from the user and we access the path here 
-    if(!avatarLocalPath){
-        throw new ApiError(400,"file path missing!!")
+    if (!avatarLocalPath) {
+        throw new ApiError(400, "file path missing!!")
     }
+
     //here we are uploading the image to the cloudinary
     const avatar = await uploadOnCloudinary(avatarLocalPath)
-    if(!avatar.url){
-        throw new ApiError(400,"file path not found!!")
+
+    if (oldImageUrl) {
+        const publicId = extractPublicId(oldImageUrl)
+        await cloudinary.uploader.destroy(publicId)
+    }
+
+    if (!avatar.url) {
+        throw new ApiError(400, "file path not found!!")
     }
     //here we are updating the url in the DB
     const user = await User.findByIdAndUpdate(
         req.user?._id,
-        {$set: {
-            avatar: avatar.url
-        }},
-        {new: true}
+        {
+            $set: {
+                avatar: avatar.url
+            }
+        },
+        { new: true }
     )
 
     return res
-    .status(200)
-    .json(
-        new ApiResponse(200,user,"avatar updated successFully!!")
-    )
+        .status(200)
+        .json(
+            new ApiResponse(200, user, "avatar updated successFully!!")
+        )
 })
 export {
     registerUser,
