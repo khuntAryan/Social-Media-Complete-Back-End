@@ -357,6 +357,89 @@ const updateUserAvatar = asyncHandler(async (req, res) => {
             new ApiResponse(200, user, "avatar updated successFully!!")
         )
 })
+
+const getUserChannelProfile = asyncHandler(async (req, res) => {
+    const { username } = req.params
+    if (!username) {
+        throw new ApiError(400, "User does not exist!!")
+    }
+    const channel = await User.aggregate([
+
+        //first pipeline which finds the particular user using the username
+        {
+            $match: {
+                username: username?.toLowerCase()
+            }
+        },
+
+
+        //pipleline for calculating the followers
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "following",
+                as: "followers"
+            }
+        },
+
+
+        //pipeline for calculating the following
+        {
+            $lookup: {
+                from: "subscriptions",
+                localField: "_id",
+                foreignField: "followers",
+                as: "following"
+            }
+        },
+
+
+
+        //pipeline for counting the documents and also followed or not
+        {
+            $addFields: {
+                followersCount: {
+                    $size: "$followers"
+                },
+                followingCount: {
+                    $size: "$following"
+                },
+                isFollowed: {
+                    $cond: {
+                        if: { $in: [req.user?._id, "$follower.follower"] },
+                        then: true,
+                        else: false
+                    }
+                }
+            }
+        },
+
+
+
+        //passing values which we want to show , selected values 
+        {
+            $project: {
+                username: 1,
+                fullname: 1,
+                avatar: 1,
+                followersCount: 1,
+                followingCount: 1,
+                isFollowed: 1
+            }
+        }
+
+
+    ])
+    if (!channel?.length) {
+        throw new ApiError(400, "channel does not exist!!")
+    }
+    return res
+        .status(200)
+        .json(
+            new ApiResponse(200, channel[0], "channel details fetched successfully!!")
+        )
+})
 export {
     registerUser,
     loginUser,
@@ -365,5 +448,6 @@ export {
     changeCurrentPassword,
     currentUser,
     updateAccountDetails,
-    updateUserAvatar
+    updateUserAvatar,
+    getUserChannelProfile
 }
